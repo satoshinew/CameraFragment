@@ -2,6 +2,11 @@ package jp.ogwork.camerafragment;
 
 import java.util.List;
 
+import jp.ogwork.camerafragment.camera.CameraFragment;
+import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPictureSizeChangeListener;
+import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPreviewSizeChangeListener;
+import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnTakePictureListener;
+
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
@@ -14,10 +19,6 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.Button;
 import android.widget.FrameLayout;
 
-import com.ogw.fragment.camera.CameraFragment;
-import com.ogw.fragment.camera.CameraSurfaceView.OnPictureSizeChangeListener;
-import com.ogw.fragment.camera.CameraSurfaceView.OnPreviewSizeChangeListener;
-import com.ogw.fragment.camera.CameraSurfaceView.OnTakePictureListener;
 
 public class MainActivity extends FragmentActivity {
 

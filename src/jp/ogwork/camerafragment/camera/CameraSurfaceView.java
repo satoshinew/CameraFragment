@@ -1,4 +1,4 @@
-package com.ogw.fragment.camera;
+package jp.ogwork.camerafragment.camera;
 
 import java.io.File;
 import java.io.FileOutputStream;

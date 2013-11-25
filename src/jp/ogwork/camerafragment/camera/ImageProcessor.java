@@ -1,4 +1,4 @@
-package com.ogw.fragment.camera;
+package jp.ogwork.camerafragment.camera;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;

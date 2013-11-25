@@ -1,6 +1,13 @@
-package com.ogw.fragment.camera;
+package jp.ogwork.camerafragment.camera;
 
 import java.util.List;
+
+import jp.ogwork.camerafragment.camera.CameraSurfaceView.CameraData;
+import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnDrawListener;
+import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPictureSizeChangeListener;
+import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPreviewListener;
+import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPreviewSizeChangeListener;
+import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnTakePictureListener;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
@@ -17,12 +24,6 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.FrameLayout;
 
-import com.ogw.fragment.camera.CameraSurfaceView.CameraData;
-import com.ogw.fragment.camera.CameraSurfaceView.OnDrawListener;
-import com.ogw.fragment.camera.CameraSurfaceView.OnPictureSizeChangeListener;
-import com.ogw.fragment.camera.CameraSurfaceView.OnPreviewListener;
-import com.ogw.fragment.camera.CameraSurfaceView.OnPreviewSizeChangeListener;
-import com.ogw.fragment.camera.CameraSurfaceView.OnTakePictureListener;
 
 /**
  * Camera Fragment
