@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import jp.ogw.hatlib.img.ImageProcessingUtils;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -368,36 +367,13 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 		return this.isCameraEnable;
 	}
 
-	public static Camera.Size choosePreviewSize(List<Size> supported, int minWidth, int minHeight, int maxWidth,
-			int maxHeight, boolean isRotate) {
-
-		/** 画面サイズ未満の中で一番大きなサイズを選択 */
-		Log.d(TAG, supported.toString());
-
-		// boolean widthBiggerThanHeight = false;
-		//
-		// int tmpWidth = 0;
-		// if (supported.get(0).height < supported.get(0).width) {
-		// widthBiggerThanHeight = true;
-		// tmpWidth = thresholdWidth;
-		// thresholdWidth = thresholdHeight;
-		// thresholdHeight = tmpWidth;
-		// }
-		//
-		// ArrayList<Size> list = new ArrayList<Size>();
-		// for (Size size : supported) {
-		// /** 画面サイズ内に収まるサイズを取得 */
-		// if (size.height <= thresholdHeight) {
-		// list.add(size);
-		// }
-		// }
+	public Camera.Size choosePreviewSize(List<Size> supported, int minWidth, int minHeight, int maxWidth, int maxHeight) {
 
 		ArrayList<Size> list = new ArrayList<Size>();
 		for (Size size : supported) {
-			if (isRotate) {// size.height > size.width) {
+			if (isRotate()) {
 				if ((minWidth <= size.height) && (minHeight <= size.width) && (size.height <= maxWidth)
 						&& (size.width <= maxHeight)) {
-					// widthBiggerThanHeight = true;
 					list.add(size);
 				}
 			} else {
@@ -436,42 +412,49 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 			}
 		}
 
-		// if (widthBiggerThanHeight) {
-		// tmpWidth = resultSize.width;
-		// resultSize.width = resultSize.height;
-		// resultSize.height = tmpWidth;
-		// }
-
 		return resultSize;
 	}
 
-	public static Size choosePictureSize(List<Size> supported, int minWidth, int minHeight, int maxWidth, int maxHeight) {
+	public Camera.Size choosePictureSize(List<Size> supported, int minWidth, int minHeight, int maxWidth, int maxHeight) {
+
 		ArrayList<Size> list = new ArrayList<Size>();
 		for (Size size : supported) {
-			if (size.height > size.width) {
-				if ((size.width <= maxWidth) && (size.height <= maxHeight)) {
-					list.add(size);
-				}
-			} else {
-				if ((size.height <= maxWidth) && (size.width <= maxHeight)) {
-					list.add(size);
-				}
+			if ((minWidth <= size.height) && (minHeight <= size.width) && (size.height <= maxWidth)
+					&& (size.width <= maxHeight)) {
+				list.add(size);
 			}
 		}
 
 		/** pick up most biggest size */
-		Size tmpSize = list.get(0);
-		for (Size finalist : list) {
-			if (tmpSize.height == finalist.height) {
-				if (tmpSize.width < finalist.width) {
-					tmpSize = finalist;
+
+		Size resultSize = null;
+
+		if (list.size() == 0) {
+			resultSize = supported.get(0);
+			for (Size tmp : supported) {
+				if (resultSize.height == tmp.height) {
+					if (resultSize.width < tmp.width) {
+						resultSize = tmp;
+					}
+				} else if (resultSize.height < tmp.height) {
+					resultSize = tmp;
 				}
-			} else if (tmpSize.height < finalist.height) {
-				tmpSize = finalist;
+			}
+		} else {
+			/** pick up most biggest size */
+
+			resultSize = list.get(0);
+			for (Size tmp : list) {
+				if (resultSize.height == tmp.height) {
+					if (resultSize.width < tmp.width) {
+						resultSize = tmp;
+					}
+				} else if (resultSize.height < tmp.height) {
+					resultSize = tmp;
+				}
 			}
 		}
-
-		return tmpSize;
+		return resultSize;
 	}
 
 	public boolean isRotate() {
@@ -962,7 +945,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 				int w = options.outWidth;
 				int h = options.outHeight;
 
-				options.inSampleSize = ImageProcessingUtils.calculateInSampleSize(options, w, h);
+				options.inSampleSize = calculateInSampleSize(options, w, h);
 
 				options.inJustDecodeBounds = false;
 
@@ -976,6 +959,23 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 				log("onPictureTaken: jpeg: data = null");
 			}
 			isCameraEnable = true;
+		}
+
+		public int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+
+			// 画像の元サイズ
+			final int height = options.outHeight;
+			final int width = options.outWidth;
+			int inSampleSize = 1;
+
+			if (height > reqHeight || width > reqWidth) {
+				if (width > height) {
+					inSampleSize = Math.round((float) height / (float) reqHeight);
+				} else {
+					inSampleSize = Math.round((float) width / (float) reqWidth);
+				}
+			}
+			return inSampleSize;
 		}
 	}
 

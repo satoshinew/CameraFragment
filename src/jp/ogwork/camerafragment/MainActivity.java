@@ -6,11 +6,11 @@ import jp.ogwork.camerafragment.camera.CameraFragment;
 import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPictureSizeChangeListener;
 import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPreviewSizeChangeListener;
 import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnTakePictureListener;
-
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.View;
@@ -18,7 +18,6 @@ import android.view.View.OnClickListener;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.Button;
 import android.widget.FrameLayout;
-
 
 public class MainActivity extends FragmentActivity {
 
@@ -61,21 +60,23 @@ public class MainActivity extends FragmentActivity {
 				cameraFragment.autoFocus();
 			}
 		});
-		
+
 		btn_take = (Button) findViewById(R.id.btn_take);
 		btn_take.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
 				cameraFragment.takePicture(true, new OnTakePictureListener() {
-					
+
 					@Override
 					public void onShutter() {
-						
+
 					}
-					
+
 					@Override
 					public void onPictureTaken(Bitmap bitmap, Camera camera) {
+						String path = Environment.getExternalStorageDirectory().toString() + "/";
+						cameraFragment.setSavePictureDir(path);
 						cameraFragment.saveBitmap(bitmap);
 					}
 				});
@@ -116,6 +117,7 @@ public class MainActivity extends FragmentActivity {
 					width = viewWidth;
 					height = (int) (viewAspectRatio * previewSize.width);
 				}
+				/** cameraSurfaceViewのサイズ変更 */
 				cameraFragment.setLayoutBounds(width, height);
 				return;
 			}

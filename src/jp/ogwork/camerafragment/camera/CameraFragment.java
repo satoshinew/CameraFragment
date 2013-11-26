@@ -24,7 +24,6 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.FrameLayout;
 
-
 /**
  * Camera Fragment
  * 
@@ -37,6 +36,9 @@ public class CameraFragment extends Fragment {
 	/** -------------------------- */
 
 	public static final String BUNDLE_KEY_CAMERA_FACING = "cameraFacing";
+
+	public CameraFragment() {
+	}
 
 	public void setCameraDirection(int cameraDirection) {
 		boolean isFrontCamera = false;
@@ -131,11 +133,11 @@ public class CameraFragment extends Fragment {
 	}
 
 	public Size choosePreviewSize(List<Size> supported, int minWidth, int minHeight, int maxWidth, int maxHeight) {
-		return CameraSurfaceView.choosePreviewSize(supported, minWidth, minHeight, maxWidth, maxHeight, isRotate());
+		return cameraPreview.choosePreviewSize(supported, minWidth, minHeight, maxWidth, maxHeight);
 	}
 
 	public Size choosePictureSize(List<Size> supported, int minWidth, int minHeight, int maxWidth, int maxHeight) {
-		return CameraSurfaceView.choosePictureSize(supported, minWidth, minHeight, maxWidth, maxHeight);
+		return cameraPreview.choosePictureSize(supported, minWidth, minHeight, maxWidth, maxHeight);
 	}
 
 	public boolean isRotate() {
