@@ -2,7 +2,7 @@ package jp.ogwork.camerafragment.camera;
 
 import java.util.List;
 
-import jp.ogwork.camerafragment.camera.CameraSurfaceView.CameraData;
+import jp.ogwork.camerafragment.camera.CameraSurfaceView.CameraSettings;
 import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnDrawListener;
 import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPictureSizeChangeListener;
 import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPreviewListener;
@@ -45,8 +45,11 @@ public class CameraFragment extends Fragment {
 		if (cameraDirection == Camera.CameraInfo.CAMERA_FACING_FRONT) {
 			isFrontCamera = true;
 		}
-		/**  */
-		cameraPreview.changeCameraDirection(isFrontCamera);
+		cameraSurfaceView.changeCameraDirection(isFrontCamera);
+	}
+
+	public int getCameraDirection() {
+		return cameraSurfaceView.getCameraSettings().cameraid;
 	}
 
 	public void setLayoutBounds(int width, int height) {
@@ -77,71 +80,75 @@ public class CameraFragment extends Fragment {
 	}
 
 	public void takePicture(boolean autoFocus, OnTakePictureListener onTakePictureListener) {
-		cameraPreview.takePicture(autoFocus, onTakePictureListener);
+		cameraSurfaceView.takePicture(autoFocus, onTakePictureListener);
 	}
 
 	public void autoFocus() {
-		cameraPreview.autoFocus();
+		cameraSurfaceView.autoFocus();
+	}
+
+	public void autoFocus(int autoFocusDelay) {
+		cameraSurfaceView.autoFocus();
 	}
 
 	public float getPictureAspectRatio() {
-		return cameraPreview.getPictureAspectRatio();
+		return cameraSurfaceView.getPictureAspectRatio();
 	}
 
 	public float getPreviewAspectRatio() {
-		return cameraPreview.getPreviewAspectRatio();
+		return cameraSurfaceView.getPreviewAspectRatio();
 	}
 
 	public void setSavePictureDir(String saveDirName) {
-		cameraPreview.setSavePictureDir(saveDirName);
+		cameraSurfaceView.setSavePictureDir(saveDirName);
 	}
 
 	public void setSavePictureName(String saveFileName) {
-		cameraPreview.setSavePictureName(saveFileName);
+		cameraSurfaceView.setSavePictureName(saveFileName);
 	}
 
-	public CameraData getCameraData() {
-		return cameraPreview.getCameraData();
+	public CameraSettings getCameraData() {
+		return cameraSurfaceView.getCameraSettings();
 	}
 
 	public void saveBitmap(Bitmap bitmap) {
-		cameraPreview.saveBitmap(bitmap);
+		cameraSurfaceView.saveBitmap(bitmap);
 	}
 
 	public Bitmap createBitmap(byte[] data) {
-		return cameraPreview.createBitmap(data);
+		return cameraSurfaceView.createBitmap(data);
 	}
 
 	public SurfaceView getSurfaceView() {
-		return cameraPreview;
+		return cameraSurfaceView;
 	}
 
 	public void flashTorch() {
-		cameraPreview.flash(Camera.Parameters.FLASH_MODE_TORCH);
+		cameraSurfaceView.flash(Camera.Parameters.FLASH_MODE_TORCH);
 	}
 
 	public void flashOn() {
-		cameraPreview.flash(Camera.Parameters.FLASH_MODE_ON);
+		cameraSurfaceView.flash(Camera.Parameters.FLASH_MODE_ON);
 	}
 
 	public void flashOff() {
-		cameraPreview.flash(Camera.Parameters.FLASH_MODE_OFF);
+		cameraSurfaceView.flash(Camera.Parameters.FLASH_MODE_OFF);
 	}
 
 	public void flashAuto() {
-		cameraPreview.flash(Camera.Parameters.FLASH_MODE_AUTO);
+		cameraSurfaceView.flash(Camera.Parameters.FLASH_MODE_AUTO);
 	}
 
 	public Size choosePreviewSize(List<Size> supported, int minWidth, int minHeight, int maxWidth, int maxHeight) {
-		return cameraPreview.choosePreviewSize(supported, minWidth, minHeight, maxWidth, maxHeight);
+		return cameraSurfaceView.choosePreviewSize(supported, minWidth, minHeight, maxWidth, maxHeight);
 	}
 
 	public Size choosePictureSize(List<Size> supported, int minWidth, int minHeight, int maxWidth, int maxHeight) {
-		return cameraPreview.choosePictureSize(supported, minWidth, minHeight, maxWidth, maxHeight);
+		return cameraSurfaceView.choosePictureSize(supported, minWidth, minHeight, maxWidth, maxHeight);
 	}
 
 	public boolean isRotate() {
-		return cameraPreview.isRotate();
+		return cameraSurfaceView.isRotate();
 	}
 
 	/** -------------------------- */
@@ -159,6 +166,17 @@ public class CameraFragment extends Fragment {
 	}
 
 	@Override
+	public void setArguments(Bundle args) {
+		super.setArguments(args);
+
+		if (args != null) {
+			defaultCameraDirection = args.getInt(BUNDLE_KEY_CAMERA_FACING, Camera.CameraInfo.CAMERA_FACING_BACK);
+
+		}
+
+	}
+
+	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		if (container == null) {
 			return null;
@@ -167,29 +185,24 @@ public class CameraFragment extends Fragment {
 		fl_camera.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 		boolean usableInCamera = (Camera.getNumberOfCameras() > 1) ? true : false;
 
-		Bundle bundle = getArguments();
-		if (bundle != null) {
-			defaultCameraDirection = bundle.getInt(BUNDLE_KEY_CAMERA_FACING, Camera.CameraInfo.CAMERA_FACING_BACK);
-		}
-
 		if (usableInCamera && defaultCameraDirection == Camera.CameraInfo.CAMERA_FACING_FRONT) {
 			/** start FrontCamera */
-			cameraPreview = new CameraSurfaceView(getActivity(), true);
+			cameraSurfaceView = new CameraSurfaceView(getActivity(), true);
 		} else {
 			/** start BackCamera */
-			cameraPreview = new CameraSurfaceView(getActivity(), false);
+			cameraSurfaceView = new CameraSurfaceView(getActivity(), false);
 		}
-		fl_camera.addView(cameraPreview);
+		fl_camera.addView(cameraSurfaceView);
 		fl_camera.setBackgroundColor(Color.CYAN);
 
 		if (onPreviewListener != null) {
-			cameraPreview.setOnPreviewListener(onPreviewListener);
+			cameraSurfaceView.setOnPreviewListener(onPreviewListener);
 		}
 		if (onDrawListener != null) {
-			cameraPreview.setOnDrawListener(onDrawListener);
+			cameraSurfaceView.setOnDrawListener(onDrawListener);
 		}
 		/** frameLayoutリサイズ用に、別のリスナーをセット */
-		cameraPreview.setOnPreviewSizeCallback(new OnPreviewSizeChangeListener() {
+		cameraSurfaceView.setOnPreviewSizeCallback(new OnPreviewSizeChangeListener() {
 			@Override
 			public Size onPreviewSizeChange(List<Size> supportedPreviewSizeList) {
 				Camera.Size size = null;
@@ -201,7 +214,7 @@ public class CameraFragment extends Fragment {
 
 			@Override
 			public void onPreviewSizeChanged(Size previewSize) {
-				Camera.Size size = cameraPreview.getCameraPreviewSize();
+				Camera.Size size = cameraSurfaceView.getCameraPreviewSize();
 				if (size != null) {
 					// setLayoutBounds(size.height, size.width);
 					Log.d("CameraFragment", "onPreviewSizeChanged() resize to [" + size.height + "]*[" + size.width
@@ -212,7 +225,7 @@ public class CameraFragment extends Fragment {
 				}
 			}
 		});
-		cameraPreview.setOnPictureSizeCallback(new OnPictureSizeChangeListener() {
+		cameraSurfaceView.setOnPictureSizeCallback(new OnPictureSizeChangeListener() {
 
 			@Override
 			public Size onPictureSizeChange(List<Size> supportedPictureSizeList) {
@@ -236,7 +249,7 @@ public class CameraFragment extends Fragment {
 	/** -------------------------- */
 
 	private FrameLayout fl_camera;
-	private CameraSurfaceView cameraPreview;
+	private CameraSurfaceView cameraSurfaceView;
 	private OnPictureSizeChangeListener onPictureSizeChangeListener;
 	private OnPreviewSizeChangeListener onPreviewSizeChangeListener;
 	private OnPreviewListener onPreviewListener;

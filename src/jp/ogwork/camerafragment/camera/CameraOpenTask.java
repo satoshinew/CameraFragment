@@ -33,6 +33,7 @@ public class CameraOpenTask extends AsyncTask<Void, Void, Camera> {
 			data = Camera.open(cameraId);
 			Log.d("CameraOpenTask", "◆open() end");
 		} catch (RuntimeException e) {
+			Log.d("CameraOpenTask", "◆open() " + e.toString());
 			return null;
 		}
 

@@ -44,7 +44,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 	/**
 	 * CameraPreferences
 	 * */
-	public class CameraData {
+	public class CameraSettings {
 		/** 0:back 1:front */
 		public int cameraid;
 		/** keep default */
@@ -55,15 +55,6 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 		public int previewHeight;
 		/** Camera preview rotate state */
 		public boolean isRotate;
-		/** save picture dir name */
-		public String saveDirName;
-		/** picture file name */
-		public String saveFileName;
-	}
-
-	public class CameraSettings {
-		/** 0:back 1:front */
-		public int cameraid;
 		/** save picture dir name */
 		public String saveDirName;
 		/** picture file name */
@@ -160,24 +151,22 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 	 * Camera.CameraInfo.CAMERA_FACING_BACK
 	 * */
 	public void changeCameraDirection(boolean useInCamera) {
-		CameraData cameraData = getCameraData();
+		CameraSettings cameraSettings = getCameraSettings();
 		int cameraId = useInCamera ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK;
 
-		if (cameraData.cameraid != cameraId) {
+		if (cameraSettings.cameraid != cameraId) {
 
-			cameraData.cameraid = cameraId;
+			cameraSettings.cameraid = cameraId;
 
 			/** release */
 			if (camera != null) {
 				releaseCamera();
 			}
-			CameraData data = getCameraData();
+			CameraSettings data = getCameraSettings();
 			CameraOpenTask cameraOpenTask = new CameraOpenTask(dataHandler, CameraHandler.REQ_CAMERA_OPEN, camera,
 					data.cameraid);
 			cameraOpenTask.execute();
 			log("changeCameraDirection() request change cameraid");
-			Message msgToMe = dataHandler.obtainMessage(CameraHandler.REQ_CAMERA_CONFIGURE);
-			dataHandler.sendMessage(msgToMe);
 		}
 	}
 
@@ -202,6 +191,10 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 	}
 
 	public void takePicture(boolean autoFocus, OnTakePictureListener onTakePictureListener) {
+		takePicture(autoFocus, onTakePictureListener, DEFAULT_AUTOFOCUS_FOCUS_TIME);
+	}
+
+	public void takePicture(boolean autoFocus, OnTakePictureListener onTakePictureListener, int autoFocusDelay) {
 		this.onTakePictureListener = onTakePictureListener;
 		if (!isCameraEnable || camera == null) {
 			return;
@@ -210,7 +203,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 		}
 		if (autoFocus) {
 			camera.cancelAutoFocus();
-			camera.autoFocus(new OnAutoFocusListener());
+			camera.autoFocus(new OnAutoFocusListener(autoFocusDelay));
 		} else {
 			camera.takePicture(new OnShutterListener(), new OnRawPictureListener(), new OnPostViewPictureListener(),
 					new OnJpegPictureListener());
@@ -218,21 +211,25 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 	}
 
 	public void autoFocus() {
+		autoFocus(DEFAULT_AUTOFOCUS_FOCUS_TIME);
+	}
+
+	public void autoFocus(int autoFocusDelay) {
 		if (isCameraEnable && camera != null) {
 			camera.cancelAutoFocus();
-			camera.autoFocus(new AutoFocusCallbackOnlyAF());
+			camera.autoFocus(new AutoFocusCallbackOnlyAF(autoFocusDelay));
 		}
 	}
 
 	public void setSavePictureDir(String saveDirName) {
-		getCameraData().saveDirName = saveDirName;
+		getCameraSettings().saveDirName = saveDirName;
 	}
 
 	public void setSavePictureName(String saveFileName) {
-		getCameraData().saveFileName = saveFileName;
+		getCameraSettings().saveFileName = saveFileName;
 	}
 
-	public CameraData getCameraData() {
+	public CameraSettings getCameraSettings() {
 		return this.cameraSettings;
 	}
 
@@ -262,8 +259,8 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 			return;
 		}
 
-		CameraData cameraData = getCameraData();
-		File mediaStorageDir = new File(cameraData.saveDirName);
+		CameraSettings cameraSettings = getCameraSettings();
+		File mediaStorageDir = new File(cameraSettings.saveDirName);
 
 		if (!mediaStorageDir.exists()) {
 			if (!mediaStorageDir.mkdirs()) {
@@ -272,7 +269,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 		}
 
 		/** 保存先 */
-		File mediaFile = new File(cameraData.saveDirName + "/" + cameraData.saveFileName);
+		File mediaFile = new File(cameraSettings.saveDirName + "/" + cameraSettings.saveFileName);
 
 		try {
 			FileOutputStream stream = new FileOutputStream(mediaFile);
@@ -292,7 +289,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 			return;
 		}
 
-		CameraData cameraData = getCameraData();
+		CameraSettings cameraData = getCameraSettings();
 		File mediaStorageDir = new File(cameraData.saveDirName);
 
 		if (!mediaStorageDir.exists()) {
@@ -317,7 +314,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
 	public Bitmap createBitmap(byte[] data) {
 		Camera.CameraInfo info = new Camera.CameraInfo();
-		Camera.getCameraInfo(getCameraData().cameraid, info);
+		Camera.getCameraInfo(getCameraSettings().cameraid, info);
 		Matrix rotateMatrix = new Matrix();
 		rotateMatrix.setRotate(info.orientation);
 		BitmapFactory.Options options = new BitmapFactory.Options();
@@ -458,7 +455,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 	}
 
 	public boolean isRotate() {
-		return getCameraData().isRotate;
+		return getCameraSettings().isRotate;
 	}
 
 	/** -------------------------- */
@@ -467,7 +464,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
 	@Override
 	public boolean handleMessage(Message msg) {
-		CameraData cameraData = getCameraData();
+		CameraSettings cameraSettings = getCameraSettings();
 		switch (msg.what) {
 		case CameraHandler.REQ_CAMERA_OPEN:
 			synchronized (this) {
@@ -485,19 +482,19 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 					e1.printStackTrace();
 				}
 
-				int rorateDegree = setCameraDisplayOrientation((Activity) this.getContext(), cameraData.cameraid,
+				int rorateDegree = setCameraDisplayOrientation((Activity) this.getContext(), cameraSettings.cameraid,
 						camera);
 				if (rorateDegree == 90 || rorateDegree == 270) {
-					cameraData.isRotate = true;
+					cameraSettings.isRotate = true;
 				} else {
-					cameraData.isRotate = false;
+					cameraSettings.isRotate = false;
 				}
 
 				// log("REQ_CAMERA_OPEN startPreview");
 				// getCameraData().camera.startPreview();
 
 				/** send to me */
-				Message msgToMe = dataHandler.obtainMessage(CameraHandler.REQ_CAMERA_CONFIGURE);
+				Message msgToMe = dataHandler.obtainMessage(CameraHandler.REQ_CAMERA_START_PREVIEW);
 				dataHandler.sendMessage(msgToMe);
 
 			} else {
@@ -507,12 +504,12 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 			}
 
 			break;
-		case CameraHandler.REQ_CAMERA_CONFIGURE:
-			log("REQ_CAMERA_CONFIGURE " + msg.toString() + " isCameraEnable = " + isCameraEnable);
+		case CameraHandler.REQ_CAMERA_START_PREVIEW:
+			log("REQ_CAMERA_START_PREVIEW " + msg.toString() + " isCameraEnable = " + isCameraEnable);
 			if (isCameraEnable && camera != null) {
 				isCameraEnable = false;
 				camera.stopPreview();
-				configure(cameraData.format, cameraData.previewWidth, cameraData.previewHeight);
+				configure(cameraSettings.format, cameraSettings.previewWidth, cameraSettings.previewHeight);
 
 				/** periodic autoFocus */
 				Camera.Parameters parameters = camera.getParameters();
@@ -522,7 +519,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 				}
 				setParameters(parameters);
 
-				log("REQ_CAMERA_CONFIGURE startPreview");
+				log("REQ_CAMERA_START_PREVIEW startPreview");
 				try {
 					camera.startPreview();
 				} catch (Exception e) {
@@ -533,7 +530,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 				isCameraEnable = true;
 			} else {
 				/** send to me */
-				Message msgToMe = dataHandler.obtainMessage(CameraHandler.REQ_CAMERA_CONFIGURE);
+				Message msgToMe = dataHandler.obtainMessage(CameraHandler.REQ_CAMERA_START_PREVIEW);
 				dataHandler.sendMessage(msgToMe);
 			}
 
@@ -554,9 +551,10 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
 		log("surfaceChanged() previewWidth = " + viewWidth + " previewHeight = " + viewHeight);
 
-		CameraData data = getCameraData();
+		CameraSettings cameraSettings = getCameraSettings();
+
 		CameraOpenTask cameraOpenTask = new CameraOpenTask(dataHandler, CameraHandler.REQ_CAMERA_OPEN, camera,
-				data.cameraid);
+				cameraSettings.cameraid);
 
 		synchronized (this) {
 			if (cameraOpenMutex == null) {
@@ -566,10 +564,9 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 			}
 		}
 
-		CameraData cameraData = getCameraData();
-		cameraData.format = format;
-		cameraData.previewHeight = viewHeight;
-		cameraData.previewWidth = viewWidth;
+		cameraSettings.format = format;
+		cameraSettings.previewHeight = viewHeight;
+		cameraSettings.previewWidth = viewWidth;
 
 		if (onDrawListener != null) {
 			mSurfaceThread = new Thread(this);
@@ -629,25 +626,22 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
 		dataHandler = new CameraHandler(this);
 
-		/** create CameraData */
-		this.cameraSettings = new CameraData();
-		CameraData cameraData = getCameraData();
-		cameraData.cameraid = useInCamera ? Camera.CameraInfo.CAMERA_FACING_FRONT
+		/** init CameraSettings */
+		this.cameraSettings = new CameraSettings();
+		cameraSettings.cameraid = useInCamera ? Camera.CameraInfo.CAMERA_FACING_FRONT
 				: Camera.CameraInfo.CAMERA_FACING_BACK;
 		String sd = Environment.getExternalStorageDirectory().getPath();
 
 		/** default save info */
-		cameraData.saveDirName = sd + "/tmp/";
-		cameraData.saveFileName = DEFAULT_FILE_NAME;// +
-		// UUID.randomUUID().toString()
-		// + ".jpeg";
+		cameraSettings.saveDirName = sd + "/tmp/";
+		cameraSettings.saveFileName = DEFAULT_FILE_NAME;
 
 		isCameraEnable = false;
 	}
 
 	private void configure(int format, int width, int height) {
 		// setPictureFormat(format); これ呼んだら、jpegCallback来なくなる場合有り
-		if (getCameraData().isRotate) {
+		if (getCameraSettings().isRotate) {
 			int temp = width;
 			width = height;
 			height = temp;
@@ -935,7 +929,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 			if (data != null) {
 				log("onPictureTaken: jpeg: data length = " + data.length);
 				Camera.CameraInfo info = new Camera.CameraInfo();
-				Camera.getCameraInfo(getCameraData().cameraid, info);
+				Camera.getCameraInfo(getCameraSettings().cameraid, info);
 				Matrix rotateMatrix = new Matrix();
 				rotateMatrix.setRotate(info.orientation);
 				BitmapFactory.Options options = new BitmapFactory.Options();
@@ -981,12 +975,18 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
 	private class OnAutoFocusListener implements AutoFocusCallback {
 
+		private int autoFocusDelay;
+
+		public OnAutoFocusListener(int autoFocusDelay) {
+			this.autoFocusDelay = autoFocusDelay;
+		}
+
 		@Override
 		public void onAutoFocus(boolean success, final Camera afCamera) {
 			log("onAutoFocus()");
 			// autoFocusが掛かり切らないうちにシャッターが降りるのをwait
 			try {
-				Thread.sleep(AUTOFOCUS_FOCUS_TIME);
+				Thread.sleep(autoFocusDelay);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -1001,11 +1001,18 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 	}
 
 	private class AutoFocusCallbackOnlyAF implements AutoFocusCallback {
+
+		private int autoFocusDelay;
+
+		public AutoFocusCallbackOnlyAF(int autoFocusDelay) {
+			this.autoFocusDelay = autoFocusDelay;
+		}
+
 		@Override
 		public void onAutoFocus(boolean success, final Camera afCamera) {
 			log("onAutoFocus()");
 			try {
-				Thread.sleep(AUTOFOCUS_FOCUS_TIME);
+				Thread.sleep(autoFocusDelay);
 			} catch (InterruptedException e) {
 			}
 			camera.cancelAutoFocus();
@@ -1013,8 +1020,8 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 	}
 
 	private static final String TAG = CameraSurfaceView.class.getSimpleName();
-	private static final boolean DEBUG = false;
-	private static final int AUTOFOCUS_FOCUS_TIME = 600;
+	private static final boolean DEBUG = true;
+	private static final int DEFAULT_AUTOFOCUS_FOCUS_TIME = 600;
 	private static final int DRAW_INTERVAL = 100;
 	private static final String DEFAULT_FILE_NAME = "pict.jpg";
 
@@ -1031,7 +1038,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 	private Object cameraOpenMutex;
 
 	/** preferences */
-	private CameraData cameraSettings;
+	private CameraSettings cameraSettings;
 	private Camera.Parameters cameraParam;
 
 	private float pictureAspectRatio;

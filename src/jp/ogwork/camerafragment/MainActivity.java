@@ -8,9 +8,9 @@ import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPreviewSizeChangeList
 import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnTakePictureListener;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Size;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.View;
@@ -30,7 +30,7 @@ public class MainActivity extends FragmentActivity {
 	private CameraFragment cameraFragment;
 
 	/** buttons */
-	private Button btn_debug;
+	private Button btn_autofocus;
 	private Button btn_take;
 
 	@Override
@@ -52,12 +52,13 @@ public class MainActivity extends FragmentActivity {
 			});
 		}
 
-		btn_debug = (Button) findViewById(R.id.btn_autofocus);
-		btn_debug.setOnClickListener(new OnClickListener() {
+		btn_autofocus = (Button) findViewById(R.id.btn_autofocus);
+		btn_autofocus.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
-				cameraFragment.autoFocus();
+				// autoFocus();
+				changeCameraDirection();
 			}
 		});
 
@@ -66,20 +67,8 @@ public class MainActivity extends FragmentActivity {
 
 			@Override
 			public void onClick(View v) {
-				cameraFragment.takePicture(true, new OnTakePictureListener() {
 
-					@Override
-					public void onShutter() {
-
-					}
-
-					@Override
-					public void onPictureTaken(Bitmap bitmap, Camera camera) {
-						String path = Environment.getExternalStorageDirectory().toString() + "/";
-						cameraFragment.setSavePictureDir(path);
-						cameraFragment.saveBitmap(bitmap);
-					}
-				});
+				takePicture();
 			}
 		});
 	}
@@ -132,5 +121,39 @@ public class MainActivity extends FragmentActivity {
 
 		getSupportFragmentManager().beginTransaction().add(R.id.fl_camera, cameraFragment, TAG_CAMERA_FRAGMENT)
 				.commit();
+	}
+
+	private void takePicture() {
+		cameraFragment.takePicture(true, new OnTakePictureListener() {
+
+			@Override
+			public void onShutter() {
+
+			}
+
+			@Override
+			public void onPictureTaken(Bitmap bitmap, Camera camera) {
+				// String path =
+				// Environment.getExternalStorageDirectory().toString()
+				// + "/";
+				// cameraFragment.setSavePictureDir(path);
+				cameraFragment.saveBitmap(bitmap);
+			}
+		});
+	}
+
+	private void autoFocus() {
+		cameraFragment.autoFocus();
+	}
+
+	private void changeCameraDirection() {
+		int cameraDirection = 0;
+		if (cameraFragment.getCameraDirection() == CameraInfo.CAMERA_FACING_BACK) {
+			cameraDirection = CameraInfo.CAMERA_FACING_FRONT;
+		} else {
+			cameraDirection = CameraInfo.CAMERA_FACING_BACK;
+
+		}
+		cameraFragment.setCameraDirection(cameraDirection);
 	}
 }
