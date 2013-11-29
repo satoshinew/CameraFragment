@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -21,6 +22,7 @@ import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.ShutterCallback;
 import android.hardware.Camera.Size;
 import android.media.MediaScannerConnection;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler.Callback;
 import android.os.Message;
@@ -86,7 +88,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 	}
 
 	public interface OnDrawListener {
-		void onDraw(SurfaceHolder holder);
+		void onDrawing(SurfaceHolder holder);
 	}
 
 	/** -------------------------- */
@@ -194,6 +196,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 		takePicture(autoFocus, onTakePictureListener, DEFAULT_AUTOFOCUS_FOCUS_TIME);
 	}
 
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	public void takePicture(boolean autoFocus, OnTakePictureListener onTakePictureListener, int autoFocusDelay) {
 		this.onTakePictureListener = onTakePictureListener;
 		if (!isCameraEnable || camera == null) {
@@ -203,7 +206,24 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 		}
 		if (autoFocus) {
 			camera.cancelAutoFocus();
-			camera.autoFocus(new OnAutoFocusListener(autoFocusDelay));
+
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+				List<String> supportedList = camera.getParameters().getSupportedFocusModes();
+
+				if (supportedList.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+					Parameters params = camera.getParameters();
+					params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+					camera.setParameters(params);
+				} else if (supportedList.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+					Parameters params = camera.getParameters();
+					params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+					camera.setParameters(params);
+				}
+				camera.autoFocus(new OnContinuousAutoFocusListener(autoFocusDelay));
+			} else {
+				camera.autoFocus(new OnAutoFocusListener(autoFocusDelay));
+			}
+
 		} else {
 			camera.takePicture(new OnShutterListener(), new OnRawPictureListener(), new OnPostViewPictureListener(),
 					new OnJpegPictureListener());
@@ -214,10 +234,28 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 		autoFocus(DEFAULT_AUTOFOCUS_FOCUS_TIME);
 	}
 
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	public void autoFocus(int autoFocusDelay) {
 		if (isCameraEnable && camera != null) {
 			camera.cancelAutoFocus();
-			camera.autoFocus(new AutoFocusCallbackOnlyAF(autoFocusDelay));
+
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+
+				List<String> supportedList = camera.getParameters().getSupportedFocusModes();
+
+				if (supportedList.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+					Parameters params = camera.getParameters();
+					params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+					camera.setParameters(params);
+				} else if (supportedList.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+					Parameters params = camera.getParameters();
+					params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+					camera.setParameters(params);
+				}
+				camera.autoFocus(new OnOnlyContinuousAutoFocusCallback());
+			} else {
+				camera.autoFocus(new OnOnlyAutoFocusCallback());
+			}
 		}
 	}
 
@@ -458,18 +496,23 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 		return getCameraSettings().isRotate;
 	}
 
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+	public void enableShutterSound(boolean enableSound) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+			camera.enableShutterSound(enableSound);
+		}
+	}
+
 	/** -------------------------- */
 	/** -------- Override -------- */
 	/** -------------------------- */
 
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	@Override
 	public boolean handleMessage(Message msg) {
 		CameraSettings cameraSettings = getCameraSettings();
 		switch (msg.what) {
 		case CameraHandler.REQ_CAMERA_OPEN:
-			synchronized (this) {
-				cameraOpenMutex = null;
-			}
 
 			log("REQ_CAMERA_OPEN " + msg.toString() + " isCameraEnable = " + isCameraEnable);
 			isCameraEnable = true;
@@ -489,9 +532,6 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 				} else {
 					cameraSettings.isRotate = false;
 				}
-
-				// log("REQ_CAMERA_OPEN startPreview");
-				// getCameraData().camera.startPreview();
 
 				/** send to me */
 				Message msgToMe = dataHandler.obtainMessage(CameraHandler.REQ_CAMERA_START_PREVIEW);
@@ -513,10 +553,26 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
 				/** periodic autoFocus */
 				Camera.Parameters parameters = camera.getParameters();
-				List<String> focusModes = parameters.getSupportedFocusModes();
-				if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
-					parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+				List<String> supportedFocusModes = parameters.getSupportedFocusModes();
+
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+					if (supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+						Parameters params = camera.getParameters();
+						params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+						camera.setParameters(params);
+					} else if (supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+						Parameters params = camera.getParameters();
+						params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+						camera.setParameters(params);
+					}
+				} else {
+					if (supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+						Parameters params = camera.getParameters();
+						params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+						camera.setParameters(params);
+					}
 				}
+
 				setParameters(parameters);
 
 				log("REQ_CAMERA_START_PREVIEW startPreview");
@@ -556,13 +612,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 		CameraOpenTask cameraOpenTask = new CameraOpenTask(dataHandler, CameraHandler.REQ_CAMERA_OPEN, camera,
 				cameraSettings.cameraid);
 
-		synchronized (this) {
-			if (cameraOpenMutex == null) {
-				cameraOpenMutex = cameraOpenTask.execute();
-			} else {
-				return;
-			}
-		}
+		cameraOpenTask.execute();
 
 		cameraSettings.format = format;
 		cameraSettings.previewHeight = viewHeight;
@@ -853,10 +903,9 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 		return true;
 	}
 
-	@SuppressLint("WrongCall")
 	private void doDraw(SurfaceHolder holder) {
 		if (onDrawListener != null) {
-			onDrawListener.onDraw(holder);
+			onDrawListener.onDrawing(holder);
 		}
 	}
 
@@ -865,14 +914,6 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 			Log.d(TAG, msg);
 		}
 	}
-
-	protected PreviewCallback mPreviewCallback = new PreviewCallback() {
-		@Override
-		public void onPreviewFrame(byte[] data, Camera camera) {
-			log("data[0] = " + data[0] + " length = " + data.length);
-			camera.addCallbackBuffer(data);
-		}
-	};
 
 	private void setParameters(Parameters params) {
 		if (cameraHealth && camera != null) {
@@ -948,7 +989,10 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 				if (onTakePictureListener != null) {
 					onTakePictureListener.onPictureTaken(bitmap, camera);
 				}
-				camera.startPreview();
+				// camera.startPreview();
+				/** send to me */
+				Message msgToMe = dataHandler.obtainMessage(CameraHandler.REQ_CAMERA_START_PREVIEW);
+				dataHandler.sendMessage(msgToMe);
 			} else {
 				log("onPictureTaken: jpeg: data = null");
 			}
@@ -983,8 +1027,8 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
 		@Override
 		public void onAutoFocus(boolean success, final Camera afCamera) {
-			log("onAutoFocus()");
-			// autoFocusが掛かり切らないうちにシャッターが降りるのをwait
+			log("onAutoFocus() success : " + success);
+
 			try {
 				Thread.sleep(autoFocusDelay);
 			} catch (InterruptedException e) {
@@ -997,27 +1041,72 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+
+			afCamera.cancelAutoFocus();
 		}
 	}
 
-	private class AutoFocusCallbackOnlyAF implements AutoFocusCallback {
+	private class OnContinuousAutoFocusListener implements AutoFocusCallback {
 
 		private int autoFocusDelay;
 
-		public AutoFocusCallbackOnlyAF(int autoFocusDelay) {
+		public OnContinuousAutoFocusListener(int autoFocusDelay) {
 			this.autoFocusDelay = autoFocusDelay;
 		}
 
 		@Override
 		public void onAutoFocus(boolean success, final Camera afCamera) {
-			log("onAutoFocus()");
+			log("onAutoFocus() success : " + success);
+
+			camera.cancelAutoFocus();
+
 			try {
 				Thread.sleep(autoFocusDelay);
 			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
-			camera.cancelAutoFocus();
+			isCameraEnable = true;
+
+			try {
+				takePicture(false, onTakePictureListener);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
 		}
 	}
+
+	private class OnOnlyAutoFocusCallback implements AutoFocusCallback {
+
+		public OnOnlyAutoFocusCallback() {
+		}
+
+		@Override
+		public void onAutoFocus(boolean success, final Camera afCamera) {
+			log("onAutoFocus() success : " + success);
+			afCamera.cancelAutoFocus();
+		}
+	}
+
+	private class OnOnlyContinuousAutoFocusCallback implements AutoFocusCallback {
+
+		public OnOnlyContinuousAutoFocusCallback() {
+		}
+
+		@Override
+		public void onAutoFocus(boolean success, final Camera afCamera) {
+			log("onAutoFocus() success : " + success);
+			afCamera.cancelAutoFocus();
+		}
+	}
+
+	protected PreviewCallback previewCallback = new PreviewCallback() {
+		@Override
+		public void onPreviewFrame(byte[] data, Camera camera) {
+			log("data[0] = " + data[0] + " length = " + data.length);
+			camera.addCallbackBuffer(data);
+		}
+	};
 
 	private static final String TAG = CameraSurfaceView.class.getSimpleName();
 	private static final boolean DEBUG = true;
@@ -1035,7 +1124,6 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 	private boolean running = true;
 	private boolean cameraHealth = true;
 	private Thread mSurfaceThread = null;
-	private Object cameraOpenMutex;
 
 	/** preferences */
 	private CameraSettings cameraSettings;

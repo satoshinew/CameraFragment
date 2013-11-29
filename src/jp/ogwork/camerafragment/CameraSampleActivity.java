@@ -19,9 +19,9 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.Button;
 import android.widget.FrameLayout;
 
-public class MainActivity extends FragmentActivity {
+public class CameraSampleActivity extends FragmentActivity {
 
-	protected static final String TAG = MainActivity.class.getName();
+	protected static final String TAG = CameraSampleActivity.class.getName();
 
 	protected static final String TAG_CAMERA_FRAGMENT = "camera";
 
@@ -32,6 +32,7 @@ public class MainActivity extends FragmentActivity {
 	/** buttons */
 	private Button btn_autofocus;
 	private Button btn_take;
+	private Button btn_change_camera_direction;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -57,8 +58,7 @@ public class MainActivity extends FragmentActivity {
 
 			@Override
 			public void onClick(View v) {
-				// autoFocus();
-				changeCameraDirection();
+				autoFocus();
 			}
 		});
 
@@ -67,8 +67,17 @@ public class MainActivity extends FragmentActivity {
 
 			@Override
 			public void onClick(View v) {
-
+				cameraFragment.enableShutterSound(false);
 				takePicture();
+			}
+		});
+
+		btn_change_camera_direction = (Button) findViewById(R.id.btn_change_camera_direction);
+		btn_change_camera_direction.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				changeCameraDirection();
 			}
 		});
 	}

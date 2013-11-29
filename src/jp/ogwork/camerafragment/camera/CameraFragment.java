@@ -150,6 +150,10 @@ public class CameraFragment extends Fragment {
 	public boolean isRotate() {
 		return cameraSurfaceView.isRotate();
 	}
+	
+	public void enableShutterSound(boolean enableSound){
+		cameraSurfaceView.enableShutterSound(enableSound);
+	}
 
 	/** -------------------------- */
 	/** -------- Override -------- */
