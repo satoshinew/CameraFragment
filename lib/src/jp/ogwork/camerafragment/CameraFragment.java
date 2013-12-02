@@ -1,13 +1,13 @@
-package jp.ogwork.camerafragment.camera;
+package jp.ogwork.camerafragment;
 
 import java.util.List;
 
-import jp.ogwork.camerafragment.camera.CameraSurfaceView.CameraSettings;
-import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnDrawListener;
-import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPictureSizeChangeListener;
-import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPreviewListener;
-import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnPreviewSizeChangeListener;
-import jp.ogwork.camerafragment.camera.CameraSurfaceView.OnTakePictureListener;
+import jp.ogwork.camerafragment.CameraSurfaceView.CameraSettings;
+import jp.ogwork.camerafragment.CameraSurfaceView.OnDrawListener;
+import jp.ogwork.camerafragment.CameraSurfaceView.OnPictureSizeChangeListener;
+import jp.ogwork.camerafragment.CameraSurfaceView.OnPreviewListener;
+import jp.ogwork.camerafragment.CameraSurfaceView.OnPreviewSizeChangeListener;
+import jp.ogwork.camerafragment.CameraSurfaceView.OnTakePictureListener;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
