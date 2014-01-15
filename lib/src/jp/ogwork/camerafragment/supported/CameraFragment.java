@@ -1,22 +1,22 @@
-package jp.ogwork.camerafragment;
+package jp.ogwork.camerafragment.supported;
 
 import java.util.List;
 
+import jp.ogwork.camerafragment.CameraSurfaceView;
 import jp.ogwork.camerafragment.CameraSurfaceView.CameraSettings;
 import jp.ogwork.camerafragment.CameraSurfaceView.OnDrawListener;
 import jp.ogwork.camerafragment.CameraSurfaceView.OnPictureSizeChangeListener;
 import jp.ogwork.camerafragment.CameraSurfaceView.OnPreviewListener;
 import jp.ogwork.camerafragment.CameraSurfaceView.OnPreviewSizeChangeListener;
 import jp.ogwork.camerafragment.CameraSurfaceView.OnTakePictureListener;
-import android.annotation.TargetApi;
+
 import android.app.Activity;
-import android.app.Fragment;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
-import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
@@ -30,7 +30,6 @@ import android.widget.FrameLayout;
  * 
  * @author s.ogawa
  */
-@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class CameraFragment extends Fragment {
 
 	/** -------------------------- */

@@ -19,7 +19,6 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.Button;
 import android.widget.FrameLayout;
 
-
 public class CameraSampleActivity extends FragmentActivity {
 
 	protected static final String TAG = CameraSampleActivity.class.getName();
@@ -41,7 +40,7 @@ public class CameraSampleActivity extends FragmentActivity {
 		setContentView(R.layout.activity_camera_sample);
 
 		if (savedInstanceState == null) {
-			/** カメラサイズを決定するため、rootViewのサイズを取る */
+			/** カメラサイズを決定するため、Viewのサイズを取る */
 			fl_camera = (FrameLayout) findViewById(R.id.fl_camera);
 			fl_camera.getViewTreeObserver().addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
 
@@ -49,7 +48,7 @@ public class CameraSampleActivity extends FragmentActivity {
 				@Override
 				public void onGlobalLayout() {
 					fl_camera.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-					addCameraFragment(fl_camera.getWidth(), fl_camera.getHeight());
+					addCameraFragment(fl_camera.getWidth(), fl_camera.getHeight(), R.id.fl_camera);
 				}
 			});
 		}
@@ -90,18 +89,28 @@ public class CameraSampleActivity extends FragmentActivity {
 		return true;
 	}
 
-	public void addCameraFragment(final int viewWidth, final int viewHeight) {
+	/***
+	 * CameraFragmentをviewに追加
+	 * 
+	 * @param viewWidth
+	 * @param viewHeight
+	 */
+	public void addCameraFragment(final int viewWidth, final int viewHeight, int containerViewId) {
 		cameraFragment = new CameraFragment();
 		Bundle args = new Bundle();
 		args.putInt(CameraFragment.BUNDLE_KEY_CAMERA_FACING, Camera.CameraInfo.CAMERA_FACING_BACK);
 		cameraFragment.setArguments(args);
+
+		/** プレビューサイズリスナの設定 */
 		cameraFragment.setOnPreviewSizeChangeListener(new OnPreviewSizeChangeListener() {
 
+			/** サイズ変更前 */
 			@Override
 			public Size onPreviewSizeChange(List<Size> supportedPreviewSizeList) {
 				return cameraFragment.choosePreviewSize(supportedPreviewSizeList, 0, 0, viewWidth, viewHeight);
 			}
 
+			/** サイズ変更後 */
 			@Override
 			public void onPreviewSizeChanged(Size previewSize) {
 
@@ -121,6 +130,8 @@ public class CameraSampleActivity extends FragmentActivity {
 				return;
 			}
 		});
+
+		/** カメラ保存サイズリスナの設定 */
 		cameraFragment.setOnPictureSizeChangeListener(new OnPictureSizeChangeListener() {
 			@Override
 			public Size onPictureSizeChange(List<Size> supportedPictureSizeList) {
@@ -129,10 +140,13 @@ public class CameraSampleActivity extends FragmentActivity {
 			}
 		});
 
-		getSupportFragmentManager().beginTransaction().add(R.id.fl_camera, cameraFragment, TAG_CAMERA_FRAGMENT)
+		getSupportFragmentManager().beginTransaction().add(containerViewId, cameraFragment, TAG_CAMERA_FRAGMENT)
 				.commit();
 	}
 
+	/***
+	 * 撮影・保存
+	 */
 	private void takePicture() {
 		cameraFragment.takePicture(true, new OnTakePictureListener() {
 
@@ -152,10 +166,16 @@ public class CameraSampleActivity extends FragmentActivity {
 		});
 	}
 
+	/**
+	 * オートフォーカス
+	 * */
 	private void autoFocus() {
 		cameraFragment.autoFocus();
 	}
 
+	/**
+	 * インカメラ・フロントカメラ切り替え
+	 * */
 	private void changeCameraDirection() {
 		int cameraDirection = 0;
 		if (cameraFragment.getCameraDirection() == CameraInfo.CAMERA_FACING_BACK) {
